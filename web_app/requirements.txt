@@ -1,0 +1,7 @@
+peft
+piper-tts
+python-multipart
+soundfile
+librosa
+pydub
+jinja2
