@@ -706,7 +706,7 @@ export default function App() {
               </div>
 
               {/* Zero-Shot Custom Voice Upload/Record Panel */}
-              {(ttsModel === "viterbox" || ttsModel.startsWith("vieneu")) && (
+              {(ttsVoice === "custom" && (ttsModel === "viterbox" || ttsModel.startsWith("vieneu"))) && (
                 <div className="border border-dashed border-hairline-strong rounded-xl p-6 bg-canvas-soft flex flex-col items-center gap-4 text-center">
                   <div className="flex items-center justify-center w-12 h-12 rounded-full bg-surface-strong border border-hairline">
                     <FileAudio size={24} className="text-body" />

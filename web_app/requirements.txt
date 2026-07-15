@@ -11,3 +11,16 @@ requests
 torch
 transformers
 python-dotenv
+sea-g2p
+onnxruntime
+soxr
+neucodec
+soe-vinorm
+einops
+conformer
+s3tokenizer
+diffusers
+resemble-perth
+spacy_pkuseg
+pykakasi
+omegaconf
