@@ -7,7 +7,7 @@ COPY web_app/frontend/ ./
 RUN npm run build
 
 # Stage 2: Build Python Backend
-FROM python:3.10-slim
+FROM python:3.10-slim-bullseye
 WORKDIR /app
 
 # Install system dependencies (ffmpeg is needed for video dubbing, git for viterbox, execstack for onnxruntime)
