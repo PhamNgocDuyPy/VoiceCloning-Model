@@ -20,7 +20,6 @@ einops
 conformer
 s3tokenizer
 diffusers
-resemble-perth
 spacy_pkuseg
 pykakasi
 omegaconf

@@ -103,6 +103,12 @@ class ViterboxEngine:
         # Viterbox downloads its weights automatically on first load.
         # It takes ~1.5GB of RAM.
         import torch
+        import transformers
+
+        # Force eager attention for transformers to avoid SDPA returning None for attentions
+        if hasattr(transformers.utils.import_utils, 'is_torch_sdpa_available'):
+            transformers.utils.import_utils.is_torch_sdpa_available = lambda: False
+            
         original_torch_load = torch.load
 
         def safe_torch_load(*args, **kwargs):
