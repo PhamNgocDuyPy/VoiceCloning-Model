@@ -26,3 +26,6 @@ pykakasi
 omegaconf
 safetensors
 scipy
+perth
+accelerate
+PyYAML
