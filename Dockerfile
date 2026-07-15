@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y ffmpeg libsndfile1 git && rm -rf /var/l
 
 # Copy backend requirements and install
 COPY web_app/requirements.txt /app/web_app/requirements.txt
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r /app/web_app/requirements.txt
 
 # Copy backend code and models
