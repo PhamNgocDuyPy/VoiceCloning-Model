@@ -1,18 +1,24 @@
 import os
 import sys
 
-# Force eager attention for transformers to avoid SDPA returning None for attentions (fixes Viterbox)
-import transformers.utils.import_utils
-transformers.utils.import_utils.is_torch_sdpa_available = lambda: False
+# Patch perth to prevent CPU / NoneType watermarker crash in VieNeu-TTS
 try:
-    import transformers.models.llama.modeling_llama
-    if hasattr(transformers.models.llama.modeling_llama, "LLAMA_ATTENTION_CLASSES"):
-        eager_class = transformers.models.llama.modeling_llama.LLAMA_ATTENTION_CLASSES.get("eager")
-        if eager_class:
-            transformers.models.llama.modeling_llama.LLAMA_ATTENTION_CLASSES["sdpa"] = eager_class
-            transformers.models.llama.modeling_llama.LLAMA_ATTENTION_CLASSES["flash_attention_2"] = eager_class
+    import perth
+    class DummyWatermarker:
+        def __init__(self, *args, **kwargs):
+            pass
+        def __getattr__(self, name):
+            return lambda *args, **kwargs: args[0] if args else None
+    perth.PerthImplicitWatermarker = DummyWatermarker
 except Exception as e:
-    print(f"[Warning] Failed to patch llama attention classes: {e}")
+    print(f"[Warning] Failed to patch perth watermarker: {e}")
+
+# Patch transformers to force eager attention globally (fixes Viterbox output_attentions=True crash)
+try:
+    from transformers.configuration_utils import PretrainedConfig
+    PretrainedConfig._attn_implementation = property(lambda self: "eager", lambda self, val: None)
+except Exception as e:
+    print(f"[Warning] Failed to patch transformers attention: {e}")
 
 import time
 import uuid
