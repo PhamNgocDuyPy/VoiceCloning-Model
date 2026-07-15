@@ -5,3 +5,10 @@ soundfile
 librosa
 pydub
 jinja2
+fastapi
+uvicorn
+requests
+vieneu
+viterbox
+torch
+transformers
