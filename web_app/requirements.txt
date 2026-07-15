@@ -1,6 +1,7 @@
 peft
 numpy==1.26.4
 piper-tts
+llama-cpp-python>=0.3.16
 python-multipart
 soundfile
 librosa

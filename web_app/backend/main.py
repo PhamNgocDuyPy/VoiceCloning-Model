@@ -15,8 +15,8 @@ except Exception as e:
 
 # Patch transformers to force eager attention globally (fixes Viterbox output_attentions=True crash)
 try:
-    from transformers.configuration_utils import PretrainedConfig
-    PretrainedConfig._attn_implementation = property(lambda self: "eager", lambda self, val: None)
+    from transformers.modeling_utils import PreTrainedModel
+    PreTrainedModel.get_correct_attn_implementation = lambda self, requested_attention, is_init_check=False: "eager"
 except Exception as e:
     print(f"[Warning] Failed to patch transformers attention: {e}")
 
