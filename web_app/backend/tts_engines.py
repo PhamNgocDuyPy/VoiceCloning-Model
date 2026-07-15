@@ -69,6 +69,9 @@ class PiperEngine:
 class VieNeuEngine:
     def __init__(self, manager, is_base=False):
         self.manager = manager
+        import vieneu.base
+        vieneu.base.VieNeuBase._init_watermarker = lambda self: None
+        
         # Load VieNeu standard PyTorch v2 model
         from vieneu import Vieneu
         print("[VieNeu] Initializing standard PyTorch VieNeu-TTS engine...")

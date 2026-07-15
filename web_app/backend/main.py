@@ -1,4 +1,10 @@
 import os
+import sys
+
+# Force eager attention for transformers to avoid SDPA returning None for attentions (fixes Viterbox)
+import transformers.utils.import_utils
+transformers.utils.import_utils.is_torch_sdpa_available = lambda: False
+
 import time
 import uuid
 import shutil
