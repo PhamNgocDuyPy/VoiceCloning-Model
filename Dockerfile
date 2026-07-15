@@ -7,11 +7,11 @@ COPY web_app/frontend/ ./
 RUN npm run build
 
 # Stage 2: Build Python Backend
-FROM python:3.12-slim-bullseye
+FROM python:3.12-slim
 WORKDIR /app
 
-# Install system dependencies (ffmpeg is needed for video dubbing, git for viterbox, execstack for onnxruntime)
-RUN apt-get update && apt-get install -y ffmpeg libsndfile1 git execstack && rm -rf /var/lib/apt/lists/*
+# Install system dependencies (ffmpeg is needed for video dubbing, git for viterbox)
+RUN apt-get update && apt-get install -y ffmpeg libsndfile1 git && rm -rf /var/lib/apt/lists/*
 
 # Copy backend requirements and install
 COPY web_app/requirements.txt /app/web_app/requirements.txt
@@ -19,12 +19,12 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r /app/web_app/requirements.txt
 RUN pip install --no-cache-dir --no-deps vieneu "viterbox @ git+https://github.com/iamdinhthuan/viterbox-tts.git"
 
-# Fix executable stack issue on some Linux kernels for onnxruntime (used by piper)
-RUN execstack -c /usr/local/lib/python3.12/site-packages/onnxruntime/capi/*.so || true
-
 # Copy backend code and models
 COPY web_app/backend /app/web_app/backend
 COPY model /app/model
+
+# Fix executable stack issue on some Linux kernels for onnxruntime using our custom python script
+RUN python /app/web_app/backend/patch_execstack.py "/usr/local/lib/python3.12/site-packages/onnxruntime/capi/*.so" || true
 
 # Ensure static directories exist (since Git ignores empty folders)
 RUN mkdir -p /app/web_app/static/outputs
