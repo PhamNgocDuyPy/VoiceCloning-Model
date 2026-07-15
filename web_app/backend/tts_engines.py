@@ -82,7 +82,7 @@ class VieNeuEngine:
         
         if not is_base:
             # Load your custom fine-tuned LoRA adapter
-            lora_path = os.path.join(self.manager.base_dir, "model")
+            lora_path = os.path.join(os.path.dirname(self.manager.base_dir), "model")
             if os.path.exists(lora_path) and os.path.exists(os.path.join(lora_path, "adapter_config.json")):
                 print(f"[VieNeu] Loading local LoRA adapter from: {lora_path}")
                 self.tts.load_lora_adapter(lora_path)
