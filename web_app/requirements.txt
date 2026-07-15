@@ -1,5 +1,5 @@
 peft
-numpy>=2.0.2
+numpy==1.26.4
 piper-tts
 python-multipart
 soundfile
@@ -13,9 +13,8 @@ torch
 transformers
 python-dotenv
 sea-g2p
-onnxruntime>=1.19.0
+onnxruntime
 soxr
-neucodec
 soe-vinorm
 einops
 conformer
