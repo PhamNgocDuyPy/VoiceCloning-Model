@@ -10,8 +10,8 @@ RUN npm run build
 FROM python:3.12-slim
 WORKDIR /app
 
-# Install system dependencies (ffmpeg is needed for video dubbing)
-RUN apt-get update && apt-get install -y ffmpeg libsndfile1 && rm -rf /var/lib/apt/lists/*
+# Install system dependencies (ffmpeg is needed for video dubbing, git for viterbox)
+RUN apt-get update && apt-get install -y ffmpeg libsndfile1 git && rm -rf /var/lib/apt/lists/*
 
 # Copy backend requirements and install
 COPY web_app/requirements.txt /app/web_app/requirements.txt

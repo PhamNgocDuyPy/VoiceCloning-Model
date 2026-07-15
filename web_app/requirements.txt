@@ -9,6 +9,6 @@ fastapi
 uvicorn
 requests
 vieneu
-viterbox
+viterbox @ git+https://github.com/iamdinhthuan/viterbox-tts.git
 torch
 transformers
