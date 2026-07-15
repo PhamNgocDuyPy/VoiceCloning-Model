@@ -1,6 +1,8 @@
 import sys
 import struct
 import glob
+import os
+import site
 
 def clear_execstack(filename):
     try:
@@ -43,6 +45,19 @@ def clear_execstack(filename):
         print(f"Could not process {filename}: {e}")
 
 if __name__ == '__main__':
-    for pattern in sys.argv[1:]:
-        for file in glob.glob(pattern, recursive=True):
-            clear_execstack(file)
+    # Try custom command line patterns if provided, else scan site packages for onnxruntime
+    if len(sys.argv) > 1:
+        for pattern in sys.argv[1:]:
+            for file in glob.glob(pattern, recursive=True):
+                clear_execstack(file)
+    else:
+        print("No path argument provided. Dynamically scanning site-packages for onnxruntime...")
+        for path in site.getsitepackages():
+            ort_path = os.path.join(path, 'onnxruntime')
+            if os.path.exists(ort_path):
+                print(f"Found onnxruntime directory at: {ort_path}")
+                so_files = glob.glob(os.path.join(ort_path, '**', '*.so'), recursive=True)
+                print(f"Found {len(so_files)} .so files to patch.")
+                for file in so_files:
+                    clear_execstack(file)
+

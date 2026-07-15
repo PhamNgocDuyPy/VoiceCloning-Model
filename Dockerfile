@@ -24,7 +24,10 @@ COPY web_app/backend /app/web_app/backend
 COPY model /app/model
 
 # Fix executable stack issue on some Linux kernels for onnxruntime using our custom python script
-RUN python /app/web_app/backend/patch_execstack.py "/usr/local/lib/python3.10/site-packages/onnxruntime/capi/*.so" || true
+RUN python /app/web_app/backend/patch_execstack.py || true
+
+# Verify that all core libraries can be imported successfully (catches missing dependencies or binary crash issues at build time)
+RUN python -c "import onnxruntime; import llama_cpp; import vieneu; from viterbox import Viterbox; print('All core libraries imported successfully!')"
 
 # Ensure static directories exist (since Git ignores empty folders)
 RUN mkdir -p /app/web_app/static/outputs
