@@ -1,4 +1,5 @@
 peft
+numpy<2
 piper-tts
 python-multipart
 soundfile

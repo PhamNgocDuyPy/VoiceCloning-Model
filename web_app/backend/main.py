@@ -4,6 +4,15 @@ import sys
 # Force eager attention for transformers to avoid SDPA returning None for attentions (fixes Viterbox)
 import transformers.utils.import_utils
 transformers.utils.import_utils.is_torch_sdpa_available = lambda: False
+try:
+    import transformers.models.llama.modeling_llama
+    if hasattr(transformers.models.llama.modeling_llama, "LLAMA_ATTENTION_CLASSES"):
+        eager_class = transformers.models.llama.modeling_llama.LLAMA_ATTENTION_CLASSES.get("eager")
+        if eager_class:
+            transformers.models.llama.modeling_llama.LLAMA_ATTENTION_CLASSES["sdpa"] = eager_class
+            transformers.models.llama.modeling_llama.LLAMA_ATTENTION_CLASSES["flash_attention_2"] = eager_class
+except Exception as e:
+    print(f"[Warning] Failed to patch llama attention classes: {e}")
 
 import time
 import uuid
