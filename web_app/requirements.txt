@@ -8,7 +8,5 @@ jinja2
 fastapi
 uvicorn
 requests
-vieneu
-viterbox @ git+https://github.com/iamdinhthuan/viterbox-tts.git
 torch
 transformers
