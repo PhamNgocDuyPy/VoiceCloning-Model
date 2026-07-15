@@ -24,3 +24,5 @@ resemble-perth
 spacy_pkuseg
 pykakasi
 omegaconf
+safetensors
+scipy
