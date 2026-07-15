@@ -14,9 +14,8 @@ torch
 transformers
 python-dotenv
 sea-g2p
-onnxruntime
+onnxruntime>=1.20.0
 soxr
-soe-vinorm
 einops
 conformer
 s3tokenizer
