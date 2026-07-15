@@ -14,13 +14,17 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y ffmpeg libsndfile1 && rm -rf /var/lib/apt/lists/*
 
 # Copy backend requirements and install
-COPY web_app/backend/requirements.txt /app/web_app/backend/
-RUN pip install --no-cache-dir -r /app/web_app/backend/requirements.txt
+COPY web_app/requirements.txt /app/web_app/requirements.txt
+RUN pip install --no-cache-dir -r /app/web_app/requirements.txt
 
 # Copy backend code and models
 COPY web_app/backend /app/web_app/backend
-COPY web_app/static /app/web_app/static
 COPY model /app/model
+
+# Ensure static directories exist (since Git ignores empty folders)
+RUN mkdir -p /app/web_app/static/outputs
+RUN mkdir -p /app/web_app/static/memes
+RUN mkdir -p /app/web_app/static/presets
 
 # Copy built frontend from Stage 1
 COPY --from=frontend-builder /app/web_app/frontend/dist /app/web_app/frontend/dist
