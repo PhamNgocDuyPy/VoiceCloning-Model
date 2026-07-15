@@ -8,7 +8,13 @@ services:
       - "8000:8000"
     volumes:
       - ./web_app/static:/app/web_app/static
+      - hf_cache:/root/.cache/huggingface
+      - models_cache:/app/web_app/models
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - GROQ_API_KEY=${GROQ_API_KEY}
     restart: unless-stopped
+
+volumes:
+  hf_cache:
+  models_cache:

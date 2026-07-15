@@ -102,7 +102,19 @@ class ViterboxEngine:
         print("[Viterbox] Loading SOTA Viterbox model on CPU...")
         # Viterbox downloads its weights automatically on first load.
         # It takes ~1.5GB of RAM.
-        self.tts = Viterbox.from_pretrained("cpu")
+        import torch
+        original_torch_load = torch.load
+
+        def safe_torch_load(*args, **kwargs):
+            if 'map_location' not in kwargs:
+                kwargs['map_location'] = 'cpu'
+            return original_torch_load(*args, **kwargs)
+
+        torch.load = safe_torch_load
+        try:
+            self.tts = Viterbox.from_pretrained("cpu")
+        finally:
+            torch.load = original_torch_load
 
     def generate(self, text: str, voice_id: str = "amee", ref_audio_path: str = None, output_path: str = "output.wav"):
         text = apply_pronunciation_dict(text)
