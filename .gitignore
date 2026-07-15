@@ -48,3 +48,5 @@ download*.wav
 # ============ Design docs (not needed in repo) ============
 elevenlabs-DESIGN.md
 taste-SKILL.md
+notebooks/
+web_app/static/chat_history.json

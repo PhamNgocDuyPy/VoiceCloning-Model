@@ -33,6 +33,7 @@ def draw_data_split():
         sizes, 
         labels=labels, 
         autopct='%1.1f%%',
+        pctdistance=0.8,
         startangle=140, 
         colors=colors,
         textprops=dict(color="black", fontsize=11, weight="bold"),
@@ -87,37 +88,39 @@ def draw_loss_curve():
 
 # ==========================================
 # 7. MODEL COMPARISON BAR CHART (Figure 7)
-# ==========================================
 def draw_model_comparison():
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4.5), dpi=300)
     
     models = ['Viterbox', 'VieNeu Base', 'VieNeu LoRA']
-    sim_scores = [0.0971, 0.1249, 0.1378]
-    wer_scores = [1.9384, 2.5725, 12.7442]
+    sim_scores = [-0.0039, 0.0158, 0.0551]
+    wer_scores = [2.0685, 2.4726, 2.2740]
     
     # Plot 1: Speaker Similarity (Higher is better)
     bars1 = ax1.bar(models, sim_scores, color=['#7F7F7F', '#1F77B4', '#FF7F0E'], width=0.5, edgecolor='black', linewidth=0.7)
     ax1.set_ylabel('Speaker Cosine Similarity (↑)', fontsize=11, labelpad=8)
     ax1.set_title('Độ tương đồng giọng nói (Similarity)', fontsize=11, weight='bold', pad=12)
-    ax1.set_ylim(0, 0.18)
+    ax1.set_ylim(-0.01, 0.07)
     ax1.grid(axis='y', linestyle=':', alpha=0.6)
     
     # Add values on top of bars
     for bar in bars1:
         yval = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2.0, yval + 0.005, f"{yval:.4f}", ha='center', va='bottom', fontsize=9, weight='bold')
+        # Handle negative value placement
+        offset = 0.002 if yval >= 0 else -0.006
+        va = 'bottom' if yval >= 0 else 'top'
+        ax1.text(bar.get_x() + bar.get_width()/2.0, yval + offset, f"{yval:.4f}", ha='center', va=va, fontsize=9, weight='bold')
         
     # Plot 2: WER (Lower is better)
     bars2 = ax2.bar(models, wer_scores, color=['#7F7F7F', '#1F77B4', '#D62728'], width=0.5, edgecolor='black', linewidth=0.7)
     ax2.set_ylabel('Word Error Rate - WER (↓)', fontsize=11, labelpad=8)
     ax2.set_title('Tỉ lệ lỗi từ (WER)', fontsize=11, weight='bold', pad=12)
-    ax2.set_ylim(0, 15.0)
+    ax2.set_ylim(0, 3.5)
     ax2.grid(axis='y', linestyle=':', alpha=0.6)
     
     # Add values on top of bars
     for bar in bars2:
         yval = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width()/2.0, yval + 0.3, f"{yval:.4f}", ha='center', va='bottom', fontsize=9, weight='bold')
+        ax2.text(bar.get_x() + bar.get_width()/2.0, yval + 0.1, f"{yval:.4f}", ha='center', va='bottom', fontsize=9, weight='bold')
         
     plt.suptitle('So sánh hiệu năng 3 mô hình trên 146 mẫu Test unseen', fontsize=13, weight='bold', y=0.98)
     plt.tight_layout()
@@ -190,10 +193,10 @@ def draw_tts_architecture():
     # voice prompt -> LLM
     ax2.annotate('', xy=(7.25, 7.2), xytext=(7.25, 8.3), arrowprops=dict(arrowstyle="->", color='#333333', lw=1.5))
     # LLM autoregressive feedback loop
-    loop = patches.Arc((8.5, 6.25), 1.2, 1.5, angle=0, theta1=270, theta2=90, color='#5E35B1', lw=1.5, ls='--')
+    loop = patches.Arc((9.2, 6.25), 0.8, 1.2, angle=0, theta1=270, theta2=90, color='#5E35B1', lw=1.5, ls='--')
     ax2.add_patch(loop)
-    ax2.annotate('', xy=(8.5, 7.0), xytext=(8.49, 7.01), arrowprops=dict(arrowstyle="->", color='#5E35B1', lw=1.5))
-    ax2.text(9.2, 6.25, "Hồi quy\n(Loop)", color='#5E35B1', fontsize=7, weight='bold', va='center')
+    ax2.annotate('', xy=(9.2, 6.85), xytext=(9.21, 6.84), arrowprops=dict(arrowstyle="->", color='#5E35B1', lw=1.5))
+    ax2.text(9.6, 6.25, "Hồi quy\n(Loop)", color='#5E35B1', fontsize=7, weight='bold', va='center', ha='center')
     
     # LLM -> codec decoder
     ax2.annotate('', xy=(5, 4.2), xytext=(5, 5.3), arrowprops=dict(arrowstyle="->", color='#333333', lw=1.5))
@@ -260,8 +263,8 @@ def draw_lora_architecture():
     ax.annotate('', xy=(5, 1.45), xytext=(5, 1.8), arrowprops=dict(arrowstyle="->", color='#333333', lw=1.5))
     
     # Annotation text
-    ax.text(2.6, 2.4, "W0 * x", fontsize=9, color='#37474F', weight='bold')
-    ax.text(6.8, 2.4, "B * A * x * (alpha/r)", fontsize=9, color='#FB8C00', weight='bold', ha='right')
+    ax.text(3.3, 2.5, "W0 * x", fontsize=10, color='#37474F', weight='bold', ha='center')
+    ax.text(6.6, 2.5, "B * A * x * (alpha/r)", fontsize=10, color='#FB8C00', weight='bold', ha='center')
     ax.text(5, 9.8, "Cấu trúc Low-Rank Adaptation (LoRA)", fontsize=13, weight='bold', ha='center')
     
     plt.tight_layout()

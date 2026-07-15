@@ -268,37 +268,8 @@ async def chat_partner(request: ChatRequest):
         system_instruction = personas.get(request.character, "Bạn là trợ lý AI thân thiện. Hãy trả lời rất ngắn gọn dưới 30 từ bằng tiếng Việt.")
         response_text = ""
         
-        # --- Try Gemini API first ---
-        if gemini_key and gemini_key != "YOUR_GEMINI_API_KEY_HERE":
-            try:
-                contents = []
-                for msg in request.history:
-                    contents.append({
-                        "role": "user" if msg.role == "user" else "model",
-                        "parts": [{"text": msg.content}]
-                    })
-                contents.append({
-                    "role": "user",
-                    "parts": [{"text": f"[Chỉ thị hệ thống: {system_instruction}]\nTin nhắn mới: {request.message}"}]
-                })
-                
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
-                headers = {"Content-Type": "application/json"}
-                payload = {"contents": contents}
-                
-                res = requests.post(url, headers=headers, json=payload, timeout=10)
-                if res.status_code == 200:
-                    res_data = res.json()
-                    response_text = res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
-                else:
-                    print(f"[Gemini API Error] {res.status_code}: {res.text}")
-                    raise Exception(f"Gemini API returned code {res.status_code}")
-            except Exception as gem_ex:
-                print(f"[Gemini Error] {gem_ex}. Trying Groq fallback...")
-                response_text = ""
-        
-        # --- Fallback to Groq API ---
-        if not response_text and groq_key and groq_key != "YOUR_GROQ_API_KEY_HERE":
+        # --- Try Groq API first ---
+        if groq_key and groq_key != "YOUR_GROQ_API_KEY_HERE":
             try:
                 messages = [{"role": "system", "content": system_instruction}]
                 for msg in request.history:
@@ -326,7 +297,36 @@ async def chat_partner(request: ChatRequest):
                     print(f"[Groq API Error] {res.status_code}: {res.text}")
                     raise Exception(f"Groq API returned code {res.status_code}")
             except Exception as groq_ex:
-                print(f"[Groq Error] {groq_ex}. Using simulated replies...")
+                print(f"[Groq Error] {groq_ex}. Trying Gemini fallback...")
+                response_text = ""
+
+        # --- Fallback to Gemini API ---
+        if not response_text and gemini_key and gemini_key != "YOUR_GEMINI_API_KEY_HERE":
+            try:
+                contents = []
+                for msg in request.history:
+                    contents.append({
+                        "role": "user" if msg.role == "user" else "model",
+                        "parts": [{"text": msg.content}]
+                    })
+                contents.append({
+                    "role": "user",
+                    "parts": [{"text": f"[Chỉ thị hệ thống: {system_instruction}]\nTin nhắn mới: {request.message}"}]
+                })
+                
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+                headers = {"Content-Type": "application/json"}
+                payload = {"contents": contents}
+                
+                res = requests.post(url, headers=headers, json=payload, timeout=10)
+                if res.status_code == 200:
+                    res_data = res.json()
+                    response_text = res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                else:
+                    print(f"[Gemini API Error] {res.status_code}: {res.text}")
+                    raise Exception(f"Gemini API returned code {res.status_code}")
+            except Exception as gem_ex:
+                print(f"[Gemini Error] {gem_ex}. Using simulated replies...")
                 response_text = ""
                 
         # --- Final fallback: simulated replies ---
@@ -346,6 +346,35 @@ async def chat_partner(request: ChatRequest):
         
         engine.generate(text=response_text, voice_id=request.voice, ref_audio_path=None, output_path=output_path)
         
+        # --- Lưu lịch sử chat ---
+        try:
+            from datetime import datetime
+            history_file = os.path.join(STATIC_DIR, "chat_history.json")
+            log_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "character": request.character,
+                "user_message": request.message,
+                "bot_response": response_text,
+                "audio_url": f"/static/outputs/{output_filename}"
+            }
+            
+            # Đọc lịch sử cũ nếu có
+            if os.path.exists(history_file):
+                with open(history_file, "r", encoding="utf-8") as f:
+                    try:
+                        logs = json.load(f)
+                    except:
+                        logs = []
+            else:
+                logs = []
+                
+            # Thêm tin nhắn mới và lưu lại
+            logs.append(log_entry)
+            with open(history_file, "w", encoding="utf-8") as f:
+                json.dump(logs, f, ensure_ascii=False, indent=2)
+        except Exception as log_ex:
+            print(f"[Warning] Failed to save chat history: {log_ex}")
+            
         return {
             "text": response_text,
             "audio_url": f"/static/outputs/{output_filename}"
@@ -385,24 +414,8 @@ async def chat_pair(request: ChatPairRequest):
         
         res_text = ""
         
-        # --- Try Gemini first ---
-        if gemini_key and gemini_key != "YOUR_GEMINI_API_KEY_HERE":
-            try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
-                headers = {"Content-Type": "application/json"}
-                payload = {"contents": [{"parts": [{"text": prompt}]}]}
-                
-                res = requests.post(url, headers=headers, json=payload, timeout=15)
-                if res.status_code == 200:
-                    res_text = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-                else:
-                    raise Exception(f"Gemini returned {res.status_code}")
-            except Exception as gem_ex:
-                print(f"[Chat Pair Gemini Error] {gem_ex}. Trying Groq...")
-                res_text = ""
-        
-        # --- Fallback to Groq ---
-        if not res_text and groq_key and groq_key != "YOUR_GROQ_API_KEY_HERE":
+        # --- Try Groq first ---
+        if groq_key and groq_key != "YOUR_GROQ_API_KEY_HERE":
             try:
                 url = "https://api.groq.com/openai/v1/chat/completions"
                 headers = {
@@ -419,12 +432,28 @@ async def chat_pair(request: ChatPairRequest):
                 res = requests.post(url, headers=headers, json=payload, timeout=15)
                 if res.status_code == 200:
                     res_text = res.json()["choices"][0]["message"]["content"].strip()
-                    print("[Chat Pair] Groq fallback succeeded.")
+                    print("[Chat Pair] Groq succeeded.")
                 else:
                     raise Exception(f"Groq returned {res.status_code}")
             except Exception as groq_ex:
-                print(f"[Chat Pair Groq Error] {groq_ex}")
-                raise HTTPException(status_code=500, detail="Cả Gemini và Groq đều thất bại.")
+                print(f"[Chat Pair Groq Error] {groq_ex}. Trying Gemini...")
+                res_text = ""
+                
+        # --- Fallback to Gemini ---
+        if not res_text and gemini_key and gemini_key != "YOUR_GEMINI_API_KEY_HERE":
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+                headers = {"Content-Type": "application/json"}
+                payload = {"contents": [{"parts": [{"text": prompt}]}]}
+                
+                res = requests.post(url, headers=headers, json=payload, timeout=15)
+                if res.status_code == 200:
+                    res_text = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                else:
+                    raise Exception(f"Gemini returned {res.status_code}")
+            except Exception as gem_ex:
+                print(f"[Chat Pair Gemini Error] {gem_ex}")
+                raise HTTPException(status_code=500, detail="Cả Groq và Gemini đều thất bại.")
         
         if not res_text:
             raise HTTPException(status_code=500, detail="Không thể sinh kịch bản hội thoại từ bất kỳ LLM nào.")
