@@ -92,11 +92,33 @@ class VieNeuEngine:
 
     def generate(self, text: str, voice_id: str = "SonTungMTP", ref_audio_path: str = None, output_path: str = "output.wav"):
         text = apply_pronunciation_dict(text)
-        # Synthesize audio. It automatically resolves the voice (e.g. SonTungMTP) 
-        # from the loaded voices.json in the LoRA folder.
-        if voice_id == "custom":
-            voice_id = None
-        wav = self.tts.infer(text=text, voice=voice_id, ref_audio=ref_audio_path)
+        
+        voice_data = None
+        ref_text = None
+        
+        if voice_id and voice_id != "custom":
+            try:
+                voice_data = self.tts.get_preset_voice(voice_id)
+            except Exception as e:
+                print(f"[VieNeu] [Warning] Failed to get preset voice '{voice_id}': {e}. Using default.")
+                try:
+                    voice_data = self.tts.get_preset_voice(None)
+                except Exception:
+                    pass
+        
+        if ref_audio_path and not voice_data:
+            try:
+                default_voice = self.tts.get_preset_voice(None)
+                ref_text = default_voice["text"]
+            except Exception:
+                ref_text = "Lúc nào cũng cười, Tùng lúc nào cũng tích cực. Vừa lúc nãy vừa cười to xong"
+
+        wav = self.tts.infer(
+            text=text,
+            voice=voice_data,
+            ref_audio=ref_audio_path,
+            ref_text=ref_text
+        )
         self.tts.save(wav, output_path)
         print(f"[VieNeu] Audio generated successfully at: {output_path}")
         return output_path
