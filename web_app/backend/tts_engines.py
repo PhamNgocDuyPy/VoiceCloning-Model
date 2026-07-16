@@ -73,12 +73,14 @@ class VieNeuEngine:
         # Load VieNeu standard PyTorch v2 model
         from vieneu import Vieneu
         print("[VieNeu] Initializing standard PyTorch VieNeu-TTS engine...")
+        hf_token = os.getenv("HF_TOKEN")
         gguf = "VieNeu-TTS-v2-Q4-K-M.gguf" if is_base else None
         self.tts = Vieneu(
             mode="standard",
             backbone_repo="pnnbao-ump/VieNeu-TTS-v2",
             backbone_device="cpu",
-            gguf_filename=gguf
+            gguf_filename=gguf,
+            hf_token=hf_token
         )
         
         if not is_base:
@@ -86,7 +88,25 @@ class VieNeuEngine:
             lora_path = os.path.join(os.path.dirname(self.manager.base_dir), "model")
             if os.path.exists(lora_path) and os.path.exists(os.path.join(lora_path, "adapter_config.json")):
                 print(f"[VieNeu] Loading local LoRA adapter from: {lora_path}")
-                self.tts.load_lora_adapter(lora_path)
+                try:
+                    self.tts.load_lora_adapter(lora_path, hf_token=hf_token)
+                except Exception as e:
+                    print(f"[VieNeu] [Warning] Failed to load LoRA on v2 base model: {e}")
+                    print("[VieNeu] This is likely because your LoRA adapter weights in 'model/' were trained on v1 (0.3B) rather than v2.")
+                    print("[VieNeu] Falling back to VieNeu-TTS-0.3B (v1) base model...")
+                    
+                    # Re-initialize self.tts using the v1 base model (VieNeu-TTS-0.3B)
+                    self.tts = Vieneu(
+                        mode="standard",
+                        backbone_repo="pnnbao-ump/VieNeu-TTS-0.3B",
+                        backbone_device="cpu",
+                        gguf_filename=None,
+                        hf_token=hf_token
+                    )
+                    
+                    # Re-try loading the LoRA adapter on the v1 base model
+                    print(f"[VieNeu] Loading local LoRA adapter on v1 base model: {lora_path}")
+                    self.tts.load_lora_adapter(lora_path, hf_token=hf_token)
             else:
                 print("[VieNeu] [Warning] Local LoRA adapter folder 'model' not found. Using VieNeu base model.")
 
