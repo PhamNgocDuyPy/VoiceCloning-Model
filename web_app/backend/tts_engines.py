@@ -73,11 +73,12 @@ class VieNeuEngine:
         # Load VieNeu standard PyTorch v2 model
         from vieneu import Vieneu
         print("[VieNeu] Initializing standard PyTorch VieNeu-TTS engine...")
+        gguf = "VieNeu-TTS-0.3B-Q4_K_M.gguf" if is_base else None
         self.tts = Vieneu(
             mode="standard",
             backbone_repo="pnnbao-ump/VieNeu-TTS-0.3B",
             backbone_device="cpu",
-            gguf_filename="VieNeu-TTS-0.3B-Q4_K_M.gguf"
+            gguf_filename=gguf
         )
         
         if not is_base:
