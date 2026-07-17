@@ -98,11 +98,10 @@ Yêu cầu Python 3.10+, Node.js 18+ và công cụ `ffmpeg` được cài đặ
 
 Tất cả các tài liệu nghiên cứu, tiền xử lý và huấn luyện được lưu trữ trong thư mục `notebooks/`:
 
-1. **`datawhisperx (1).ipynb`:** 
-   * **Chức năng:** Công cụ nhận dạng giọng nói (speech-to-text) sử dụng Faster-Whisper và phân vai người nói (diarization) cấp độ từ (word-level) phiên bản sơ khai.
-2. **`datawhisperx_v2.ipynb`:** 
-   * **Chức năng:** Pipeline tiền xử lý và lọc sạch dữ liệu âm thanh cải tiến. Tự động kiểm tra chất lượng file (chỉ số SNR, tỷ lệ im lặng, chuẩn hóa âm lượng peak-normalization) để xuất ra bộ dữ liệu chuẩn (16kHz WAV + metadata.csv) sẵn sàng cho huấn luyện.
-3. **`evaltts (1).ipynb`:** 
+1. **`datawhisperx.ipynb`:** 
+   * **Chức năng:** Công cụ nhận dạng giọng nói (speech-to-text) sử dụng Faster-Whisper và phân vai người nói (diarization) cấp độ từ (word-level).
+2. **`evaltts (1).ipynb`:** 
    * **Chức năng:** Notebook đánh giá chất lượng và so sánh hiệu năng. Tiến hành chạy suy luận trên 146 câu test unseen và tự động chấm điểm khách quan qua hai thước đo: WER/CER (sử dụng Whisper làm trọng tài) và Speaker Similarity (độ tương đồng giọng qua mô hình trích xuất ECAPA-TDNN).
-4. **`tts_finetuning_lora.ipynb`:** 
+3. **`tts_finetuning_lora.ipynb`:** 
    * **Chức năng:** Notebook huấn luyện LoRA cho VieNeu-TTS-v2 trên GPU Kaggle T4. Tích hợp các kỹ thuật tối ưu hóa phần cứng (dynamic padding, gradient accumulation, AdamW 8-bit, cosine decay scheduler) và early stopping để chống hiện tượng overfitting sớm.
+
