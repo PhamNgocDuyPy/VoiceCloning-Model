@@ -69,6 +69,7 @@ class PiperEngine:
 class VieNeuEngine:
     def __init__(self, manager, is_base=False):
         self.manager = manager
+        self.is_base = is_base
         
         # Load VieNeu standard PyTorch v2 model
         from vieneu import Vieneu
@@ -92,7 +93,8 @@ class VieNeuEngine:
                 try:
                     self.tts.load_lora_adapter(lora_path, hf_token=hf_token)
                 except Exception as e:
-                    print(f"[VieNeu] [Warning] Failed to load LoRA on v2 base model: {e}")
+                    e_msg = str(e).encode('ascii', errors='ignore').decode('ascii')
+                    print(f"[VieNeu] [Warning] Failed to load LoRA on v2 base model: {e_msg}")
                     print("[VieNeu] This is likely because your LoRA adapter weights in 'model/' were trained on v1 (0.3B) rather than v2.")
                     print("[VieNeu] Falling back to VieNeu-TTS-0.3B (v1) base model...")
                     
@@ -111,18 +113,21 @@ class VieNeuEngine:
                     self.tts.load_lora_adapter(lora_path, hf_token=hf_token)
             else:
                 print("[VieNeu] [Warning] Local LoRA adapter folder 'model' not found. Using VieNeu base model.")
-
+ 
     def generate(self, text: str, voice_id: str = "SonTungMTP", ref_audio_path: str = None, output_path: str = "output.wav"):
         text = apply_pronunciation_dict(text)
         
         voice_data = None
         ref_text = None
         
-        if voice_id and voice_id != "custom":
+        # Only use preset voice reference codes for the base model (is_base=True).
+        # For the fine-tuned LoRA model (is_base=False), passing reference codes causes conflicts/silence.
+        if self.is_base and voice_id and voice_id != "custom" and not ref_audio_path:
             try:
                 voice_data = self.tts.get_preset_voice(voice_id)
             except Exception as e:
-                print(f"[VieNeu] [Warning] Failed to get preset voice '{voice_id}': {e}. Using default.")
+                e_msg = str(e).encode('ascii', errors='ignore').decode('ascii')
+                print(f"[VieNeu] [Warning] Failed to get preset voice '{voice_id}': {e_msg}. Using default.")
                 try:
                     voice_data = self.tts.get_preset_voice(None)
                 except Exception:
