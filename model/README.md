@@ -1,9 +1,9 @@
 ---
-base_model: pnnbao-ump/VieNeu-TTS-0.3B
+base_model: pnnbao-ump/VieNeu-TTS-v2
 library_name: peft
 pipeline_tag: text-generation
 tags:
-- base_model:adapter:pnnbao-ump/VieNeu-TTS-0.3B
+- base_model:adapter:pnnbao-ump/VieNeu-TTS-v2
 - lora
 - transformers
 ---

@@ -76,6 +76,24 @@ class VieNeuEngine:
         print("[VieNeu] Initializing standard PyTorch VieNeu-TTS engine...")
         hf_token = os.getenv("HF_TOKEN")
         gguf = "VieNeu-TTS-v2-Q4-K-M.gguf" if is_base else None
+
+        # Force float32 on CPU to avoid bfloat16 numerical instability.
+        # VieNeu v2 is saved in bfloat16 by default (trained on GPU).
+        # On CPU, bfloat16 produces garbage logits → model generates random tokens → garbled audio.
+        # This monkey-patch forces float32 when running on CPU-only environments like our VPS.
+        try:
+            import torch
+            from transformers import AutoModelForCausalLM as _AMCL
+            _orig_from_pretrained = _AMCL.from_pretrained.__func__
+            def _fp32_from_pretrained(cls, *args, **kwargs):
+                if "dtype" not in kwargs and "torch_dtype" not in kwargs:
+                    kwargs["torch_dtype"] = torch.float32
+                    print("[VieNeu] Forcing torch_dtype=float32 for CPU stability")
+                return _orig_from_pretrained(cls, *args, **kwargs)
+            _AMCL.from_pretrained = classmethod(_fp32_from_pretrained)
+        except Exception as ep:
+            print(f"[VieNeu] [Warning] Could not apply float32 patch: {ep}")
+
         self.tts = Vieneu(
             mode="standard",
             backbone_repo="pnnbao-ump/VieNeu-TTS-v2",

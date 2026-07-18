@@ -29,7 +29,3 @@ scipy
 perth
 accelerate
 PyYAML
-torchao
-torchtune
-vector-quantize-pytorch
-local_attention
