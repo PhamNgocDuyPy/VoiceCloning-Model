@@ -40,6 +40,20 @@ from .utils import dub_video, concatenate_audios
 
 app = FastAPI(title="VoiceLab Web API")
 
+@app.on_event("startup")
+def startup_event():
+    try:
+        from .setup_assets import create_voice_presets, create_meme_videos
+        presets_dir = os.path.join(STATIC_DIR, "presets")
+        memes_dir = os.path.join(STATIC_DIR, "memes")
+        os.makedirs(presets_dir, exist_ok=True)
+        os.makedirs(memes_dir, exist_ok=True)
+        create_voice_presets(presets_dir)
+        create_meme_videos(memes_dir)
+        print("[Startup] Assets successfully initialized.")
+    except Exception as e:
+        print(f"[Startup Error] Failed to initialize assets: {e}")
+
 # Configure CORS so Vite frontend (port 5173) can communicate with backend (port 8000)
 app.add_middleware(
     CORSMiddleware,
