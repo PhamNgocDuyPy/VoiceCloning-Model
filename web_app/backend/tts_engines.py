@@ -157,7 +157,8 @@ class VieNeuEngine:
             text=text,
             voice=voice_data,
             ref_audio=ref_audio_path,
-            ref_text=ref_text
+            ref_text=ref_text,
+            apply_watermark=False
         )
         self.tts.save(wav, output_path)
         print(f"[VieNeu] Audio generated successfully at: {output_path}")
