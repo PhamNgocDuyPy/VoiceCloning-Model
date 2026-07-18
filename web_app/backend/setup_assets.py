@@ -84,34 +84,74 @@ def _create_sine_preset(file_path):
 
 def create_meme_videos(memes_dir):
     """
-    Uses the system's FFmpeg tool to generate 5-second color MP4 videos
-    acting as templates for the Meme Dubbing Studio.
+    Attempts to download real meme video templates from YouTube using yt-dlp,
+    falling back to FFmpeg solid color backgrounds if the download fails.
     """
     print("[Setup] Generating video meme templates...")
-    memes = {
-        "cat_talking": ("color=c=purple:s=640x360:d=5", "Meme Cat Talking"),
-        "minions": ("color=c=yellow:s=640x360:d=5", "Meme Minions"),
-        "breaking_news": ("color=c=red:s=640x360:d=5", "Meme Breaking News")
+    memes_sources = {
+        "cat_talking": ('ytsearch1:"cat talking meme green screen"', "color=c=purple:s=640x360:d=5"),
+        "minions": ('ytsearch1:"minions green screen"', "color=c=yellow:s=640x360:d=5"),
+        "breaking_news": ('ytsearch1:"breaking news green screen template"', "color=c=red:s=640x360:d=5")
     }
     
-    for meme_id, (lavfi_filter, label) in memes.items():
+    for meme_id, (search_query, fallback_filter) in memes_sources.items():
         file_path = os.path.join(memes_dir, f"{meme_id}.mp4")
         if not os.path.exists(file_path):
-            # Generate a 5-second color video with drawtext filter
-            cmd = [
-                "ffmpeg", "-y",
-                "-f", "lavfi", "-i", lavfi_filter,
-                "-f", "lavfi", "-i", "sine=f=440:d=5",
-                "-c:v", "libx264", "-c:a", "aac",
-                "-pix_fmt", "yuv420p",
-                file_path
-            ]
-            print(f"  -> Creating meme: {meme_id}...")
-            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if result.returncode != 0:
-                print(f"  [Error] FFmpeg failed for {meme_id}: {result.stderr.decode('utf-8', errors='ignore')}")
-            else:
-                print(f"  -> Created meme video: {file_path}")
+            success = False
+            try:
+                print(f"  -> Attempting to download real meme video for {meme_id}...")
+                import json
+                cmd_info = ["python", "-m", "yt_dlp", "--dump-json", "--no-warnings", search_query]
+                res_info = subprocess.run(cmd_info, capture_output=True, text=True, check=True)
+                info = json.loads(res_info.stdout.strip().split("\n")[0])
+                video_url = info['webpage_url']
+                
+                temp_dl = f"temp_{meme_id}.mp4"
+                cmd_dl = [
+                    "python", "-m", "yt_dlp", 
+                    "-f", "bestvideo[height<=480]+bestaudio/best[height<=480]/best", 
+                    "-o", temp_dl, 
+                    video_url
+                ]
+                subprocess.run(cmd_dl, check=True)
+                
+                # Cut to 5 seconds and scale/re-encode
+                cmd_ffmpeg = [
+                    "ffmpeg", "-y", "-i", temp_dl,
+                    "-t", "5", "-c:v", "libx264", "-c:a", "aac",
+                    "-pix_fmt", "yuv420p", "-vf", "scale=640:360",
+                    file_path
+                ]
+                res_ffmpeg = subprocess.run(cmd_ffmpeg, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                
+                if os.path.exists(temp_dl):
+                    try:
+                        os.remove(temp_dl)
+                    except Exception:
+                        pass
+                    
+                if res_ffmpeg.returncode == 0:
+                    print(f"  -> Successfully created real meme video: {file_path}")
+                    success = True
+                else:
+                    print(f"  -> FFmpeg failed to process downloaded video for {meme_id}. Falling back to solid color.")
+            except Exception as e:
+                print(f"  -> Failed to download real video for {meme_id}: {e}. Falling back to solid color.")
+            
+            if not success:
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-f", "lavfi", "-i", fallback_filter,
+                    "-f", "lavfi", "-i", "sine=f=440:d=5",
+                    "-c:v", "libx264", "-c:a", "aac",
+                    "-pix_fmt", "yuv420p",
+                    file_path
+                ]
+                result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if result.returncode != 0:
+                    print(f"  [Error] FFmpeg solid color failed for {meme_id}: {result.stderr.decode('utf-8', errors='ignore')}")
+                else:
+                    print(f"  -> Created fallback solid color video: {file_path}")
         else:
             print(f"  -> Meme video already exists: {file_path}")
 
