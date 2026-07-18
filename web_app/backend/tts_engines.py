@@ -111,6 +111,19 @@ class VieNeuEngine:
                     # Re-try loading the LoRA adapter on the v1 base model
                     print(f"[VieNeu] Loading local LoRA adapter on v1 base model: {lora_path}")
                     self.tts.load_lora_adapter(lora_path, hf_token=hf_token)
+                
+                # Apply monkey patch to inject notebook-specific generation parameters for the fine-tuned LoRA model
+                if hasattr(self.tts, "backbone") and self.tts.backbone is not None:
+                    print("[VieNeu] Applying notebook-optimized generation hyper-parameters (repetition_penalty=1.2, top_p=0.9, temp=0.7)")
+                    original_generate = self.tts.backbone.generate
+                    def custom_generate(*args, **kwargs):
+                        kwargs["repetition_penalty"] = 1.2
+                        kwargs["top_p"] = 0.9
+                        kwargs["temperature"] = 0.7
+                        if "top_k" in kwargs:
+                            del kwargs["top_k"]
+                        return original_generate(*args, **kwargs)
+                    self.tts.backbone.generate = custom_generate
             else:
                 print("[VieNeu] [Warning] Local LoRA adapter folder 'model' not found. Using VieNeu base model.")
  
