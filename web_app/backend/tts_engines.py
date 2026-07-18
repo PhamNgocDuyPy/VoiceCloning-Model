@@ -80,6 +80,7 @@ class VieNeuEngine:
             backbone_repo="pnnbao-ump/VieNeu-TTS-v2",
             backbone_device="cpu",
             gguf_filename=gguf,
+            codec_repo="neuphonic/neucodec",
             hf_token=hf_token
         )
         
@@ -101,6 +102,7 @@ class VieNeuEngine:
                         backbone_repo="pnnbao-ump/VieNeu-TTS-0.3B",
                         backbone_device="cpu",
                         gguf_filename=None,
+                        codec_repo="neuphonic/neucodec",
                         hf_token=hf_token
                     )
                     
