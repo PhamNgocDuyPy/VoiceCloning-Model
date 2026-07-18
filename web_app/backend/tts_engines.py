@@ -131,32 +131,55 @@ class VieNeuEngine:
         text = apply_pronunciation_dict(text)
         
         voice_data = None
+        ref_codes = None
         ref_text = None
-        
-        # Only use preset voice reference codes for the base model (is_base=True).
-        # For the fine-tuned LoRA model (is_base=False), passing reference codes causes conflicts/silence.
-        if self.is_base and voice_id and voice_id != "custom" and not ref_audio_path:
+
+        if ref_audio_path:
+            # Zero-shot cloning: encode the uploaded reference audio into codes directly
             try:
-                voice_data = self.tts.get_preset_voice(voice_id)
+                ref_codes = self.tts.encode_reference(ref_audio_path)
+                try:
+                    default_voice = self.tts.get_preset_voice(None)
+                    ref_text = default_voice.get("text", "Lúc nào cũng cười, Tùng lúc nào cũng tích cực. Vừa lúc nãy vừa cười to xong")
+                except Exception:
+                    ref_text = "Lúc nào cũng cười, Tùng lúc nào cũng tích cực. Vừa lúc nãy vừa cười to xong"
+                print(f"[VieNeu] Using zero-shot cloning with custom ref audio")
             except Exception as e:
                 e_msg = str(e).encode('ascii', errors='ignore').decode('ascii')
-                print(f"[VieNeu] [Warning] Failed to get preset voice '{voice_id}': {e_msg}. Using default.")
+                print(f"[VieNeu] [Warning] encode_reference failed: {e_msg}")
+        else:
+            # Use preset voice codes (from voices.json which is bundled with LoRA adapter or model)
+            try:
+                voice_data = self.tts.get_preset_voice(voice_id)
+                print(f"[VieNeu] Using preset voice: {voice_id}")
+            except Exception:
                 try:
                     voice_data = self.tts.get_preset_voice(None)
-                except Exception:
-                    pass
-        
-        if ref_audio_path and not voice_data:
-            try:
-                default_voice = self.tts.get_preset_voice(None)
-                ref_text = default_voice["text"]
-            except Exception:
-                ref_text = "Lúc nào cũng cười, Tùng lúc nào cũng tích cực. Vừa lúc nãy vừa cười to xong"
+                    print(f"[VieNeu] Using default preset voice")
+                except Exception as e:
+                    e_msg = str(e).encode('ascii', errors='ignore').decode('ascii')
+                    print(f"[VieNeu] [Warning] No preset voice found: {e_msg}. Falling back to hardcoded ref_text.")
+                    # Use hardcoded ref_codes from voices.json on disk as last resort
+                    try:
+                        import json
+                        voices_json_path = os.path.join(os.path.dirname(self.manager.base_dir), "model", "voices.json")
+                        if os.path.exists(voices_json_path):
+                            with open(voices_json_path, "r", encoding="utf-8") as f:
+                                vdata = json.load(f)
+                            first_preset = list(vdata.get("presets", {}).values())[0]
+                            import numpy as np
+                            ref_codes = np.array(first_preset["codes"], dtype=np.int64)
+                            ref_text = first_preset.get("text", "Lúc nào cũng cười, Tùng lúc nào cũng tích cực.")
+                            print(f"[VieNeu] Loaded ref_codes from voices.json directly")
+                    except Exception as e2:
+                        e_msg2 = str(e2).encode('ascii', errors='ignore').decode('ascii')
+                        print(f"[VieNeu] [Warning] voices.json fallback failed: {e_msg2}")
 
         wav = self.tts.infer(
             text=text,
             voice=voice_data,
-            ref_audio=ref_audio_path,
+            ref_audio=None,
+            ref_codes=ref_codes,
             ref_text=ref_text,
             apply_watermark=False
         )
